@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rubik Move Trainer — AnimCubeJS</title>
+<style>
+  :root{--bg:#0d1016;--panel:#171c25;--panel2:#202735;--text:#f4f7fb;--muted:#aab4c4;--accent:#69a7ff}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;min-height:100dvh;color:var(--text);font-family:Segoe UI,system-ui,sans-serif;overscroll-behavior:none;
+       background:radial-gradient(circle at 50% 10%,#1a2435 0,#0d1016 50%,#090b10 100%)}
+  button,input,select{font:inherit}
+  button{border:0;border-radius:14px;padding:13px 18px;cursor:pointer;color:#fff;background:var(--panel2);font-weight:800;min-height:48px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button:hover{filter:brightness(1.12)} button:disabled{opacity:.45;cursor:not-allowed}
+  .primary{background:var(--accent);color:#07101d}.ghost{background:transparent;border:1px solid #354055}
+  .screen{min-height:100vh;min-height:100dvh;display:none;align-items:center;justify-content:center;padding:28px}.screen.active{display:flex}
+  .card{width:min(780px,95vw);background:#171c25f5;border:1px solid #2b3445;border-radius:24px;padding:34px;box-shadow:0 22px 70px #0006}
+  .clean-menu{text-align:center;width:min(520px,92vw);padding:42px 34px}
+  .clean-menu h1{margin-bottom:28px}
+  h1{margin:0 0 10px;font-size:clamp(34px,7vw,64px);line-height:1}h2{margin:0 0 18px;font-size:34px}
+  p{color:var(--muted);line-height:1.55}.small{font-size:13px;color:#8994a8}
+  .menu-buttons{display:grid;gap:12px;margin-top:26px}
+  .play-layout{width:min(1280px,98vw);display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px}
+  .game-card,.side-card{background:#171c25ed;border:1px solid #2b3445;border-radius:22px;box-shadow:0 16px 45px #0005}
+  .game-card{padding:24px;min-height:760px;display:flex;flex-direction:column}.side-card{padding:20px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.title{font-weight:800;font-size:24px}
+  .move-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+  .label{color:var(--muted);font-size:15px}.moves{min-height:120px;width:100%;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .move{font-size:clamp(58px,10vw,118px);font-weight:900;line-height:.9}.chip{padding:8px 12px;border-radius:11px;background:#111720;border:1px solid #313b4b;font-size:24px;font-weight:900}
+  .hidden{filter:blur(15px);color:#4b5669}.timer{font-size:30px;font-variant-numeric:tabular-nums;font-weight:800}.status{min-height:24px;color:var(--muted)}
+  .cube-panel{width:min(720px,100%);min-height:350px;display:flex;justify-content:center;align-items:center}
+  #trainerCube{width:min(620px,96%);height:360px}
+  .orientation{font-size:12px;color:#8f9caf;margin-top:-4px}
+  .controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .touch-action{display:flex;width:min(560px,100%);min-height:64px;align-items:center;justify-content:center;text-align:center;border-radius:18px;margin:16px auto 0;padding:16px 22px;background:var(--accent);color:#07101d;font-size:18px;font-weight:900;letter-spacing:.02em;box-shadow:0 8px 24px #0004;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  .touch-action:active{transform:scale(.985);filter:brightness(.96)}
+  .touch-action[disabled]{opacity:.45;pointer-events:none}
+  .side-stat{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #2a3342}.side-stat:last-child{border-bottom:0}
+  .mini{font-size:12px;color:var(--muted)}
+  .overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;overflow:auto;background:#030508bd;backdrop-filter:blur(7px);z-index:20;padding:20px}
+  .overlay.show{display:flex}.modal{width:min(760px,96vw);max-height:calc(100dvh - 40px);overflow:auto;background:#171c25;border:1px solid #313b4c;border-radius:22px;padding:26px}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.modal-head h2{margin:0}
+  .setting{padding:16px;border:1px solid #30394a;background:#131822;border-radius:16px}.settings-grid{display:grid;gap:18px;margin-top:12px}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;gap:18px}.setting-row strong{display:block;margin-bottom:4px}.setting-row span{color:var(--muted);font-size:13px}
+  select,input[type=number],input[type=range]{width:180px}
+  select,input[type=number]{background:#0e141d;color:#fff;border:1px solid #344053;border-radius:10px;padding:10px 11px}
+  input[type=number]{width:90px;font-size:18px;font-weight:800;text-align:center}.stepBtn{position:relative;z-index:3;pointer-events:auto;touch-action:manipulation;padding:8px 13px;min-width:42px;border:1px solid #3a465b;background:#202a3a;font-size:20px;line-height:1}
+  input[type=range]{accent-color:var(--accent);position:relative;z-index:2;touch-action:pan-x;cursor:pointer}.range-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:2}
+  .move-settings-grid{display:grid;gap:10px;margin-top:14px}
+  .move-setting{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid #30394a;background:#131822;border-radius:14px;cursor:pointer;touch-action:manipulation}
+  .move-setting.off{opacity:.45}
+  .move-setting .move-name{font-size:24px;font-weight:900;text-align:center}
+  .move-setting input[type=range]{width:100%;min-width:120px}
+  .move-setting .move-actions{display:flex;align-items:center;gap:8px}
+  .move-setting .move-weight{min-width:28px;text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+  .move-setting .move-state{min-width:54px}
+  .submodal{width:min(680px,96vw)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}.note{margin-top:18px;padding:12px 14px;border-radius:12px;background:#111720;border:1px solid #30394a;color:#aab4c4;font-size:13px}
+  .kbd{display:inline-flex;padding:4px 8px;border-radius:8px;background:#0f141d;border:1px solid #364153;font-weight:800;color:#eaf0f7}
+  #algoMoves{min-height:88px}
+  #algoMoves .chip{font-size:20px}
+  #algoCube{width:min(620px,96%);height:360px}
+  /* Compact trainer layout: the main trainer no longer wastes space on a side panel or duplicate buttons. */
+  #game .play-layout{grid-template-columns:1fr;width:min(1040px,96vw);gap:0}
+  #game .game-card{min-height:0}
+  #game .move-area{justify-content:flex-start}
+  #game .cube-panel{min-height:280px}
+
+  @media(max-width:900px){.play-layout{grid-template-columns:1fr}.game-card{min-height:auto}.side-card{order:-1}}
+  @media (min-width:701px) and (max-width:1100px){
+    #game .game-card{padding:18px;border-radius:20px}
+    #game .move-area{gap:10px}
+    #game .moves{min-height:88px}
+    #game .move{font-size:clamp(58px,9vw,94px)}
+    #game .cube-panel{min-height:250px}
+    #game #trainerCube{width:min(560px,92%);height:min(31svh,290px)}
+    #game .touch-action{width:min(620px,100%);min-height:66px;margin-top:10px}
+  }
+
+  @media(max-width:700px){
+    .screen{align-items:flex-start;padding:calc(10px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));overflow:auto}
+    .card{padding:22px 16px;border-radius:18px;width:100%}
+    .clean-menu{padding:34px 18px;width:min(520px,100%)}
+    .play-layout{width:100%;gap:12px}
+    .game-card,.side-card{border-radius:18px}
+    #game .game-card{padding:13px}
+    .topbar{align-items:flex-start}
+    .title{font-size:20px}
+    #game .move-area{gap:8px}
+    #game .moves{min-height:72px;gap:7px}
+    #game .move{font-size:clamp(48px,16vw,82px)}
+    #game .chip{font-size:18px;padding:6px 9px}
+    #trainerCube,#algoCube{width:100%;height:min(34svh,290px);min-height:205px}
+    #game .cube-panel{min-height:215px;width:100%}
+    .orientation{font-size:11px}
+    #game .controls{display:none}
+    .controls{gap:8px}
+    .controls button{flex:1 1 120px}
+    .touch-action{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;width:100%;min-height:70px;font-size:17px}
+    .settings-grid{gap:12px}
+    .setting-row{align-items:flex-start}
+    .setting-row span{display:block;max-width:58vw}
+    select,input[type=number],input[type=range]{max-width:100%}
+  }
+  @media(max-width:390px){
+    .screen{padding-left:8px;padding-right:8px}
+    .game-card{padding:11px}
+    .topbar .row button{padding:10px 12px}
+    .touch-action{min-height:66px;font-size:16px}
+  }
+</style>
+
+<!-- AnimCubeJS is open-source and designed to be embedded in web pages. -->
+<script src="https://cdn.jsdelivr.net/gh/cubing/AnimCubeJS@master/AnimCube3.js"></script>
+
+<style id="premium-ui">
+  :root{
+    --bg:#070a10;
+    --bg2:#0b0f17;
+    --panel:rgba(14,18,28,.78);
+    --panel-solid:#111723;
+    --panel2:#1a2332;
+    --line:rgba(255,255,255,.09);
+    --line-strong:rgba(122,162,255,.24);
+    --text:#f7f9fd;
+    --muted:#98a6ba;
+    --accent:#77a8ff;
+    --accent2:#9b8cff;
+    --good:#6ee7b7;
+    --warn:#f8c36a;
+    --shadow:0 28px 90px rgba(0,0,0,.42);
+  }
+  html{background:var(--bg)}
+  body{
+    color:var(--text);
+    background:
+      radial-gradient(900px 500px at 8% -5%, rgba(119,168,255,.14), transparent 62%),
+      radial-gradient(850px 500px at 94% 6%, rgba(155,140,255,.11), transparent 64%),
+      radial-gradient(700px 420px at 50% 110%, rgba(110,231,183,.06), transparent 70%),
+      linear-gradient(180deg,#080b12 0%,#070a10 100%);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.24;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:34px 34px;
+    mask-image:linear-gradient(to bottom,rgba(0,0,0,.8),transparent 92%);
+  }
+  body::after{content:"";position:fixed;width:36vw;height:36vw;max-width:520px;max-height:520px;left:32%;top:14%;pointer-events:none;border-radius:50%;filter:blur(90px);background:rgba(119,168,255,.07)}
+  button,.touch-action,input,select{transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease}
+  button{border:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,#1a2332,#141b27);box-shadow:0 8px 24px rgba(0,0,0,.18);letter-spacing:.01em}
+  button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 28px rgba(0,0,0,.26);border-color:rgba(255,255,255,.14)}
+  button:active:not(:disabled){transform:translateY(0) scale(.985)}
+  button:focus-visible,.touch-action:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(119,168,255,.32);outline-offset:2px}
+  .primary{
+    color:#08111e;
+    background:linear-gradient(135deg,#86b1ff 0%,#6f9cff 48%,#9c8eff 100%);
+    box-shadow:0 10px 28px rgba(119,168,255,.22), inset 0 1px rgba(255,255,255,.42);
+    border-color:rgba(255,255,255,.16)
+  }
+  .ghost{background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.12)}
+  .screen{padding:28px}
+  .card,.game-card,.side-card,.modal{
+    background:linear-gradient(180deg,rgba(19,25,37,.88),rgba(11,15,23,.9));
+    border:1px solid var(--line);
+    box-shadow:var(--shadow), inset 0 1px rgba(255,255,255,.035);
+    backdrop-filter:blur(24px) saturate(130%);
+    -webkit-backdrop-filter:blur(24px) saturate(130%);
+  }
+  .clean-menu{
+    position:relative;overflow:hidden;width:min(640px,94vw);padding:54px 42px 38px;border-radius:30px;
+  }
+  .clean-menu::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(119,168,255,.09),transparent 42%,rgba(155,140,255,.07));pointer-events:none}
+  .clean-menu > *{position:relative}
+  .clean-menu h1{font-size:clamp(38px,7vw,72px);letter-spacing:-.055em;margin:8px 0 12px;background:linear-gradient(110deg,#fff 15%,#bdd6ff 55%,#c6baff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand-mark{display:inline-flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid rgba(119,168,255,.22);background:rgba(119,168,255,.07);border-radius:999px;color:#b7cbff;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+  .brand-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#86b1ff,#9c8eff);box-shadow:0 0 18px rgba(119,168,255,.8)}
+  .menu-subtitle{max-width:480px;margin:0 auto;color:#9aa8bd;font-size:15px;line-height:1.55}
+  .menu-buttons{gap:13px;margin-top:28px}
+  .menu-buttons button{min-height:58px;font-size:16px;border-radius:16px}
+  .menu-byline{display:flex;align-items:center;justify-content:center;gap:9px;margin:5px 0 0;color:#aebbd0;font-size:14px;font-weight:700;letter-spacing:.04em}
+  .menu-byline::before,.menu-byline::after{content:"";width:34px;height:1px;background:linear-gradient(90deg,transparent,rgba(119,168,255,.45))}
+  .menu-byline::after{background:linear-gradient(90deg,rgba(119,168,255,.45),transparent)}
+  .menu-buttons #playBtn{min-height:66px;font-size:18px}
+  .menu-footer{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}
+  .menu-badge{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);color:#8f9cb0;font-size:11px;font-weight:800;letter-spacing:.06em}
+  .play-layout{width:min(1380px,98vw);grid-template-columns:minmax(0,1fr) 350px;gap:18px}
+  .game-card,.side-card{border-radius:26px}
+  .game-card{padding:22px;min-height:790px}
+  .side-card{padding:20px;position:relative;overflow:hidden}
+  .side-card::before{content:"";position:absolute;width:180px;height:180px;right:-90px;top:-90px;background:rgba(119,168,255,.08);border-radius:50%;filter:blur(5px)}
+  .topbar{padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.055)}
+  .title{font-size:21px;letter-spacing:-.02em}
+  .title::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:10px;background:linear-gradient(135deg,#86b1ff,#9c8eff);box-shadow:0 0 18px rgba(119,168,255,.5);vertical-align:2px}
+  .move-area{padding-top:8px}
+  .label{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:900;color:#8290a5}
+  .moves{min-height:128px}
+  .move{font-size:clamp(64px,10vw,124px);letter-spacing:-.06em;text-shadow:0 10px 40px rgba(119,168,255,.12)}
+  .chip{border-radius:12px;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.08);box-shadow:inset 0 1px rgba(255,255,255,.04)}
+  .hidden{color:#465065;filter:blur(14px);text-shadow:none}
+  .timer{font-size:32px;color:#e9eef8;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+  .status{font-size:14px;color:#a5b1c4}
+  .cube-panel{border-radius:22px;background:radial-gradient(circle at 50% 45%,rgba(119,168,255,.055),transparent 62%);border:1px solid rgba(255,255,255,.045);margin-top:8px;overflow:hidden}
+  .orientation{text-transform:uppercase;letter-spacing:.09em;color:#738096}
+  .controls button{border-radius:14px}
+  .touch-action{
+    width:min(620px,100%);min-height:72px;border-radius:20px;margin-top:18px;font-size:17px;
+    background:linear-gradient(135deg,rgba(134,177,255,.96),rgba(156,142,255,.96));
+    box-shadow:0 18px 40px rgba(119,168,255,.18),inset 0 1px rgba(255,255,255,.38);letter-spacing:.04em
+  }
+  .touch-action:active{transform:scale(.992);box-shadow:0 10px 24px rgba(119,168,255,.12)}
+  .side-card h3{margin:2px 0 16px;font-size:14px;text-transform:uppercase;letter-spacing:.14em;color:#8190a5}
+  .side-stat{padding:13px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+  .side-stat strong{font-size:14px;color:#e6ecf6}
+  .side-card p{font-size:13px}
+  .kbd{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1)}
+  .modal{border-radius:26px;padding:24px}
+  .overlay{background:rgba(2,4,8,.74);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .setting,.move-setting{background:linear-gradient(180deg,rgba(18,24,35,.8),rgba(13,18,27,.82));border-color:rgba(255,255,255,.065);box-shadow:inset 0 1px rgba(255,255,255,.025)}
+  .setting strong{font-size:14px}.setting-row span{color:#8f9cb0}
+  .move-setting{grid-template-columns:60px minmax(0,1fr) auto;border-radius:16px;padding:13px 14px}
+  .move-setting:hover{border-color:rgba(119,168,255,.2);transform:translateY(-1px)}
+  input[type=range]{height:6px;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#88b6ff,#9b8cff);border:2px solid #edf4ff;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#88b6ff,#9b8cff);border:2px solid #edf4ff}
+  select,input[type=number]{background:rgba(5,9,15,.72);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px rgba(255,255,255,.03)}
+  .note{background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.06)}
+  @media(max-width:900px){
+    .play-layout{grid-template-columns:1fr}
+    .side-card{order:-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 18px}
+    .side-card h3,.side-card > div[style]{grid-column:1/-1}
+  }
+  @media(max-width:700px){
+    .screen{padding:10px 9px calc(14px + env(safe-area-inset-bottom))}
+    .clean-menu{padding:38px 18px 24px;border-radius:24px}
+    .clean-menu h1{font-size:clamp(40px,11vw,58px)}
+    .menu-byline{font-size:13px;margin-top:3px}
+    .menu-subtitle{font-size:14px}
+    .menu-buttons button{min-height:58px}
+    .how-modal{max-height:88svh;overflow:auto;overscroll-behavior:contain}
+    .how-section{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+    .how-section:last-of-type{border-bottom:0}
+    .how-section h3{margin:0 0 8px;font-size:16px;letter-spacing:.02em}
+    .how-section p{margin:7px 0;line-height:1.5}
+    .how-list{display:grid;gap:8px;margin:10px 0}
+    .how-list > div{display:grid;grid-template-columns:minmax(92px,130px) 1fr;gap:10px;align-items:start;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)}
+    .how-list > div b{color:#8fd3ff}
+    .how-list.notation > div b{color:#f8d66d}
+
+    .play-layout{gap:10px}
+    .game-card{padding:12px;border-radius:20px;min-height:0}
+    .side-card{padding:13px;border-radius:18px;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+    .side-card h3{margin-bottom:8px}
+    .topbar{padding-bottom:10px}
+    .cube-panel{margin-top:2px}
+    #trainerCube,#algoCube{height:min(40svh,330px)}
+    .touch-action{position:relative;bottom:auto;min-height:72px;margin-top:12px}
+    .modal{padding:18px;border-radius:20px}
+  }
+</style>
+
+</head>
+<body>
+
+<section id="menu" class="screen active">
+  <div class="card clean-menu">
+    <div class="brand-mark"><span class="brand-dot"></span>Speedcubing trainer</div>
+    <h1>Rubik Move Trainer</h1>
+    <div class="menu-byline">by Joran</div>
+    <div class="menu-buttons">
+      <button class="primary" id="playBtn">START</button>
+      <button id="algorithmBtn">ALGORITMES · OLL / PLL</button>
+      <button id="settingsBtn">INSTELLINGEN</button>
+      <button id="howBtn">HOE SPEEL JE?</button>
+    </div>
+    <div class="menu-footer"><span class="menu-badge">PHONE READY</span><span class="menu-badge">IPAD READY</span><span class="menu-badge">OLL · PLL</span></div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="play-layout">
+    <div class="game-card">
+      <div class="topbar">
+        <div class="title">Move Trainer</div>
+        <div class="row"><button class="ghost" id="menuBtn">MENU</button><button class="ghost" id="settingsBtn2">⚙</button></div>
+      </div>
+
+      <div class="move-area">
+        <div class="label" id="phase">Klaar</div>
+        <div class="moves" id="moves"></div>
+        <div class="timer" id="timer">0.00 s</div>
+        <div class="status" id="status">Tik op de grote knop om te starten.</div>
+
+        <div class="cube-panel">
+          <div id="trainerCube"></div>
+        </div>
+        <div class="orientation">🟨 boven · 🟦 voor · 🟥 rechts</div>
+
+        <div class="touch-action" id="touchAction" role="button" tabindex="0" aria-label="Trainer actie">TIK HIER OM TE STARTEN</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="algorithms" class="screen">
+  <div class="play-layout">
+    <div class="game-card">
+      <div class="topbar">
+        <div class="title">Algoritme Trainer</div>
+        <div class="row"><button class="ghost" id="algoMenuBtn">MENU</button></div>
+      </div>
+      <div class="move-area">
+        <div class="controls" style="margin-top:0">
+          <button class="primary" id="ollTab">OLL</button>
+          <button id="pllTab">PLL</button>
+        </div>
+        <div class="label" id="algoGroupLabel">2-look OLL · Edges</div>
+        <h2 id="algoName" style="margin:0;font-size:clamp(28px,5vw,42px)">—</h2>
+        <div class="small" id="algoCaseType">—</div>
+        <div class="moves" id="algoMoves"></div>
+        <div class="status" id="algoStatus">Bekijk de case en voer het algoritme uit.</div>
+        <div class="cube-panel"><div id="algoCube"></div></div>
+        <div class="orientation">🟨 boven · 🟦 voor · 🟥 rechts</div>
+        <div class="controls">
+          <button class="primary" id="algoNextBtn">VOLGENDE</button>
+          <button id="algoRevealBtn">REVEAL</button>
+        </div>
+      </div>
+    </div>
+    <aside class="side-card">
+      <h3>Algoritme</h3>
+      <div class="side-stat"><span>Set</span><strong id="algoSideSet">OLL</strong></div>
+      <div class="side-stat"><span>Case</span><strong id="algoSideCase">—</strong></div>
+      <div class="side-stat"><span>Totaal</span><strong id="algoSideCount">—</strong></div>
+      <div style="margin-top:18px">
+        <div class="mini">Jouw keuze</div>
+        <p style="margin:8px 0 0">Kies <b>OLL</b> of <b>PLL</b>, bekijk de kubus en probeer het algoritme uit je hoofd.</p>
+      </div>
+      <div class="note" style="margin-top:18px">Dit is jouw 2-look set: <b>10 OLL-algoritmes</b> en <b>6 PLL-algoritmes</b> (2 corners + 4 edges). Bij REVEAL verschijnt het exacte algoritme.</div>
+    </aside>
+  </div>
+</section>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>Instellingen</h2><button class="ghost" id="closeSettings">SLUITEN</button></div>
+    <div class="settings-grid">
+      <div class="setting"><div class="setting-row">
+        <div><strong>3D-kubus</strong><span>Toon de digitale cube bij reveal.</span></div>
+        <button id="cubeToggle" class="primary">Aan</button>
+      </div></div>
+
+      <div class="setting"><div class="setting-row">
+        <div><strong>Timer</strong><span>Meet je tijd.</span></div>
+        <button id="timerToggle" class="primary">Aan</button>
+      </div></div>
+
+      <div class="setting"><div class="setting-row">
+        <div><strong>Moves aan of uit zetten</strong><span>Kies welke moves in je trainer mogen komen en hoe vaak.</span></div>
+        <button id="movesSettingsBtn">MEER INSTELLINGEN</button>
+      </div></div>
+
+      <div class="setting">
+        <div class="setting-row">
+          <div><strong>Aantal zetten</strong><span>Vul zelf een getal in, bijvoorbeeld 5 of 8, of kies een bereik zoals 5–8.</span></div>
+          <select id="lengthMode"><option value="fixed">Vast aantal</option><option value="range">Bereik</option></select>
+        </div>
+        <div id="fixedRow" class="range-controls" style="margin-top:14px"><span>Exact:</span><button type="button" class="stepBtn" id="fixedMinus" aria-label="één zet minder">−</button><input id="fixedLength" type="number" min="1" max="50" step="1" value="3"><button type="button" class="stepBtn" id="fixedPlus" aria-label="één zet meer">+</button><span>zetten</span></div>
+        <div id="rangeRow" class="range-controls" style="display:none;margin-top:14px"><span>Van</span><button type="button" class="stepBtn" id="minMinus" aria-label="minimum één lager">−</button><input id="minLength" type="number" min="1" max="50" step="1" value="1"><button type="button" class="stepBtn" id="minPlus" aria-label="minimum één hoger">+</button><span>tot</span><button type="button" class="stepBtn" id="maxMinus" aria-label="maximum één lager">−</button><input id="maxLength" type="number" min="1" max="50" step="1" value="3"><button type="button" class="stepBtn" id="maxPlus" aria-label="maximum één hoger">+</button><span>zetten</span></div>
+      </div>
+
+      <div class="setting"><div class="setting-row">
+        <div><strong>Weergave</strong><span>Eén voor één of alles tegelijk.</span></div>
+        <select id="displayMode"><option value="step">Eén voor één</option><option value="all">Alles tegelijk</option></select>
+      </div></div>
+
+      <div class="setting"><div class="setting-row">
+        <div><strong>Weergavetijd</strong><span>Hoe lang een move in de trainer zichtbaar blijft.</span></div>
+        <div class="range-controls"><input id="displayRange" type="range" min="250" max="2500" step="50" value="900"><b id="displayValue">900 ms</b></div>
+      </div></div>
+
+      <div class="setting"><div class="setting-row">
+        <div><strong>Animatiesnelheid cube</strong><span>Hoe snel de digitale cube beweegt tijdens Reveal.</span></div>
+        <div class="range-controls">
+          <input id="animationRange" type="range" min="100" max="1500" step="50" value="650">
+          <b id="animationValue">650 ms</b>
+        </div>
+      </div></div>
+    </div>
+    <div class="note">
+      De cube zelf komt hier rechtstreeks uit AnimCubeJS. Bij reveal wordt dezelfde reeks eerst automatisch geanimeerd met AnimCubeJS en daarna exact opnieuw als starttoestand toegepast:
+      bijvoorbeeld <b>R U' F L</b>. Daardoor wordt de berekening niet nog eens door een tweede cube-systeem overgedaan.
+    </div>
+    <div class="row" style="margin-top:20px;justify-content:flex-end"><button class="primary" id="saveSettings">KLAAR</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="moveSettingsOverlay">
+  <div class="modal submodal">
+    <div class="modal-head"><h2>Moves</h2><button class="ghost" id="closeMoveSettings">SLUITEN</button></div>
+    <p style="margin:8px 0 0">Tik op een move om hem aan/uit te zetten. Met de schuif verander je de <b>relatieve kans</b>. Zet de waarde op <b>0</b> om hem uit te schakelen.</p>
+    <div class="move-settings-grid" id="moveSettingsGrid"></div>
+    <div class="note">De trainer kiest geen identieke face twee keer achter elkaar. De ingestelde waarden zijn daarom gewichten, geen exacte percentages per losse zet.</div>
+    <div class="row" style="margin-top:20px;justify-content:flex-end"><button class="primary" id="doneMoveSettings">KLAAR</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="howOverlay">
+  <div class="modal how-modal">
+    <div class="modal-head"><h2>Hoe speel je?</h2><button class="ghost" id="closeHow">SLUITEN</button></div>
+
+    <div class="how-section">
+      <h3>🎯 1. Move Trainer</h3>
+      <p>De Move Trainer helpt je snelle, losse cube-moves te herkennen en uit te voeren. Je krijgt een willekeurige reeks zoals <b>R U' F2 L</b>.</p>
+      <p>Kies vooraf hoe lang de reeks moet zijn. Je kunt een <b>vaste lengte</b> gebruiken of een <b>bereik</b>, bijvoorbeeld 5–8 zetten.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>👆 2. De ronde starten</h3>
+      <p>Op telefoon en iPad gebruik je alleen de grote knop onderaan. Die ene knop verandert automatisch mee met de fase van de ronde.</p>
+      <div class="how-list">
+        <div><b>START</b><span>Nieuwe reeks starten.</span></div>
+        <div><b>ONTHULLEN</b><span>Na het onthouden onthult dezelfde knop de reeks en laat hij de kubus animeren.</span></div>
+        <div><b>VOLGENDE</b><span>Na de reveal begint dezelfde knop direct een nieuwe ronde.</span></div>
+      </div>
+      <p class="small">Op een toetsenbord blijven <b>R</b> (onthullen) en <b>N</b> (volgende ronde) werken.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>👀 3. Twee weergaven</h3>
+      <p><b>Stap voor stap</b> laat de moves één voor één verschijnen. Dit is handig om eerst rustig te lezen.</p>
+      <p><b>Alles tegelijk</b> toont de volledige reeks in één keer, zodat je hem meteen op je echte cube kunt uitvoeren.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>🧠 4. OLL · PLL trainen</h3>
+      <p>Via <b>ALGORITMES · OLL / PLL</b> oefen je 2-look OLL en 2-look PLL als aparte algoritme-trainer.</p>
+      <p><b>OLL:</b> 10 cases.</p>
+      <p><b>PLL:</b> 6 cases — <b>Diagonal</b>, <b>Headlights</b>, <b>H</b>, <b>Ua</b>, <b>Ub</b> en <b>Z</b>.</p>
+      <p>Je krijgt eerst alleen de case. Tik op <b>REVEAL</b> om het exacte algoritme te bekijken en te laten animeren.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>⚙️ 5. Moves instellen</h3>
+      <p>Ga naar <b>INSTELLINGEN → Moves aan/uit zetten → MEER INSTELLINGEN</b>.</p>
+      <p>Daar kun je voor <b>U, R, F, D, L en B</b> de relatieve kans instellen. Je kunt een move volledig uitschakelen door hem uit te zetten of de waarde op <b>0</b> te zetten.</p>
+      <p>De waarden worden op je apparaat opgeslagen. Daardoor blijven je favoriete instellingen bewaard wanneer je de trainer later opnieuw opent.</p>
+      <p class="small">De kansen zijn gewichten en geen exacte percentages. De trainer voorkomt bovendien dat dezelfde face direct twee keer achter elkaar wordt gekozen.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>🔤 6. Move-notatie</h3>
+      <div class="how-list notation">
+        <div><b>R / L</b><span>Rechter- / linkerzijde draaien.</span></div>
+        <div><b>U / D</b><span>Boven- / onderzijde draaien.</span></div>
+        <div><b>F / B</b><span>Voor- / achterzijde draaien.</span></div>
+        <div><b>'</b><span>Tegen de klok in vanaf de betreffende zijde bekeken.</span></div>
+        <div><b>2</b><span>Een halve draai, bijvoorbeeld R2.</span></div>
+      </div>
+    </div>
+
+    <div class="how-section">
+      <h3>⏱️ 7. Timer en kubus</h3>
+      <p>Met de timerinstelling kun je bepalen of je tijd wilt meten. De digitale kubus kan afzonderlijk aan of uit worden gezet.</p>
+      <p>De timer en kubus zijn vooral bedoeld als feedback tijdens het trainen; je kunt ze dus aanpassen aan wat voor jou het prettigst werkt.</p>
+    </div>
+
+    <div class="how-section">
+      <h3>✅ 8. Handige trainingsroutine</h3>
+      <p>Begin met korte reeksen, gebruik daarna stap voor stap langere reeksen en zet later extra moves aan. Voor OLL/PLL kun je dezelfde case meerdere keren achter elkaar trainen totdat je het algoritme zonder nadenken kunt uitvoeren.</p>
+    </div>
+
+    <div class="note how-note"><b>Doel:</b> kijk steeds minder lang naar de tekst en probeer de move of het algoritme uiteindelijk vanuit herkenning en muscle memory uit te voeren.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // AnimCubeJS direct-access hooks. This lets the trainer use
+  // AnimCubeJS' own mature cube state + animation engine.
+  var acjs_removeListeners = [];
+  var acjs_startAnimation = [];
+  var cubeResetTimer = null;
+  var algoResetTimer = null;
+
+  function faceWeights(){
+    return MOVE_NAMES.map(face => [face, Math.max(0, Number(settings.moveWeights[face]) || 0)]);
+  }
+
+  const settings = {
+    cube: true,
+    timer: true,
+    lengthMode: "fixed",
+    fixedLength: 3,
+    minLength: 1,
+    maxLength: 3,
+    displayMode: "step",
+    displayMs: 900,
+    animationMs: 650,
+    moveWeights: { U: 4, R: 4, F: 4, D: 1, L: 4, B: 1 },
+    moveLastWeights: { U: 4, R: 4, F: 4, D: 1, L: 4, B: 1 }
+  };
+
+  const MOVE_NAMES = ["U","R","F","D","L","B"];
+  const SETTINGS_KEY = "rubik_move_trainer_settings_v8";
+
+  function loadSavedSettings(){
+    try{
+      const raw=localStorage.getItem(SETTINGS_KEY);
+      if(!raw) return;
+      const saved=JSON.parse(raw);
+      if(!saved || typeof saved!=="object") return;
+      if(saved.moveWeights && typeof saved.moveWeights==="object") MOVE_NAMES.forEach(face=>{
+        const n=Number(saved.moveWeights[face]);
+        if(Number.isFinite(n)) settings.moveWeights[face]=Math.max(0,Math.min(10,Math.round(n)));
+      });
+      if(saved.moveLastWeights && typeof saved.moveLastWeights==="object") MOVE_NAMES.forEach(face=>{
+        const n=Number(saved.moveLastWeights[face]);
+        if(Number.isFinite(n) && n>0) settings.moveLastWeights[face]=Math.max(1,Math.min(10,Math.round(n)));
+      });
+      ["cube","timer"].forEach(key=>{ if(typeof saved[key]==="boolean") settings[key]=saved[key]; });
+      if(saved.lengthMode==="fixed" || saved.lengthMode==="range") settings.lengthMode=saved.lengthMode;
+      ["fixedLength","minLength","maxLength"].forEach(key=>{
+        const n=Number(saved[key]);
+        if(Number.isFinite(n)) settings[key]=Math.max(1,Math.min(50,Math.round(n)));
+      });
+      if(saved.displayMode==="step" || saved.displayMode==="all") settings.displayMode=saved.displayMode;
+      ["displayMs","animationMs"].forEach(key=>{
+        const n=Number(saved[key]);
+        if(Number.isFinite(n)) settings[key]=Math.round(n);
+      });
+      if(settings.maxLength<settings.minLength) settings.maxLength=settings.minLength;
+      if(settings.lengthMode==="fixed") settings.fixedLength=Math.max(1,Math.min(50,settings.fixedLength));
+      settings.displayMs=Math.max(250,Math.min(2500,Math.round(Number(settings.displayMs)||900)));
+      settings.animationMs=Math.max(100,Math.min(1500,Math.round(Number(settings.animationMs)||650)));
+    }catch(e){
+      // Ignore unavailable/corrupt storage; defaults remain usable.
+    }
+  }
+
+  function saveSettings(){
+    try{ localStorage.setItem(SETTINGS_KEY,JSON.stringify({
+      cube:settings.cube,timer:settings.timer,lengthMode:settings.lengthMode,
+      fixedLength:settings.fixedLength,minLength:settings.minLength,maxLength:settings.maxLength,
+      displayMode:settings.displayMode,displayMs:settings.displayMs,animationMs:settings.animationMs,
+      moveWeights:settings.moveWeights,moveLastWeights:settings.moveLastWeights
+    })); }catch(e){}
+  }
+
+  const ALGORITHMS = {
+    OLL: [
+      {name:"Dot Shape", caseType:"Edges", image:1, alg:"F R U R' U' F' f R U R' U' f'"},
+      {name:"I-Shape", caseType:"Edges", image:1, alg:"F R U R' U' F'"},
+      {name:"L-Shape", caseType:"Edges", image:1, alg:"f R U R' U' f'"},
+      {name:"Antisune", caseType:"Corners", image:2, alg:"R U2 R' U' R U' R'"},
+      {name:"H", caseType:"Corners", image:2, alg:"R U R' U R U' R' U R U2 R'"},
+      {name:"L", caseType:"Corners", image:2, alg:"F R' F' r U R U' r'"},
+      {name:"Pi", caseType:"Corners", image:2, alg:"R U2 R2 U' R2 U' R2 U2 R"},
+      {name:"Sune", caseType:"Corners", image:2, alg:"R U R' U R U2 R'"},
+      {name:"T", caseType:"Corners", image:2, alg:"r U R' U' r' F R F'"},
+      {name:"U", caseType:"Corners", image:2, alg:"R2 D R' U2 R D' R' U2 R'"}
+    ],
+    PLL: [
+      {name:"Diagonal", caseType:"Corners", image:1, alg:"F R U' R' U' R U R' F' R U R' U' R' F R F'"},
+      {name:"Headlights", caseType:"Corners", image:1, alg:"R U R' U' R' F R2 U' R' U' R U R' F'"},
+      {name:"PLL (H)", caseType:"Edges", image:2, alg:"M2 U M2 U2 M2 U M2"},
+      {name:"PLL (Ua)", caseType:"Edges", image:2, alg:"R U' R U R U R U' R' U' R2"},
+      {name:"PLL (Ub)", caseType:"Edges", image:2, alg:"R2 U R U R' U' R' U' R' U R'"},
+      {name:"PLL (Z)", caseType:"Edges", image:2, alg:"M' U M2 U M2 U M' U2 M2"}
+    ]
+  };
+
+  let seq = [];
+  let roundActive = false;
+  let showing = false;
+  let revealed = false;
+  let timerStart = 0;
+  let timerFrame = null;
+  let displayTimer = null;
+  let lastMs = 0;
+  let cubeReady = false;
+  let algoMode = "OLL";
+  let algoIndex = 0;
+  let algoRevealed = false;
+
+  const $ = id => document.getElementById(id);
+  const menu = $("menu"), game = $("game"), cubeHost = $("trainerCube");
+  const touchAction = $("touchAction");
+
+  function esc(v){return encodeURIComponent(v).replace(/%20/g," ")}
+  function sequenceString(){return seq.join(" ")}
+  function animSequenceString(){
+    return seq.map(m => m.endsWith("²") ? m[0] + "2" : m).join(" ");
+  }
+
+  function lengthNow(){
+    if(settings.lengthMode==="fixed") return Math.max(1,Math.min(50,Number(settings.fixedLength)||1));
+    const a=Math.max(1,Math.min(50,Number(settings.minLength)||1));
+    const b=Math.max(a,Math.min(50,Number(settings.maxLength)||a));
+    return a+Math.floor(Math.random()*(b-a+1));
+  }
+
+  function weightedFace(prevFace){
+    // Avoid the same face twice in a row when there is another enabled face.
+    // If only one face is enabled, allow it to repeat so the requested
+    // sequence length is still respected.
+    const enabled = faceWeights().filter(([, weight]) => weight > 0);
+    if(enabled.length===0) return null;
+    const choices = enabled.filter(([face]) => face !== prevFace);
+    const pool = choices.length ? choices : enabled;
+    const total = pool.reduce((sum, [,weight]) => sum + weight, 0);
+    if(total <= 0) return null;
+    let pick = Math.random() * total;
+
+    for(const [face, weight] of pool){
+      pick -= weight;
+      if(pick < 0) return face;
+    }
+    return pool[pool.length - 1][0];
+  }
+
+  function randomMove(prev){
+    const prevFace = prev ? prev[0] : null;
+    const face = weightedFace(prevFace);
+    if(!face) return null;
+
+    // U2 and R2 are the only double turns.
+    // They use the same rare move-type chance as the low-frequency D/B faces.
+    // Otherwise normal/prime remain 50/50.
+    if(face === "U" || face === "R"){
+      const roll = Math.random();
+      if(roll < 0.10) return face + "²";   // rare double turn
+      if(roll < 0.55) return face;         // normal
+      return face + "'";                   // prime
+    }
+
+    return Math.random() < 0.5 ? face : face + "'";
+  }
+
+  function makeSeq(){
+    const out=[]; const n=lengthNow();
+    for(let i=0;i<n;i++){
+      const move=randomMove(out[i-1]);
+      if(!move) break;
+      out.push(move);
+    }
+    return out;
+  }
+
+  function hasAnyMoveEnabled(){
+    return faceWeights().some(([,weight]) => weight > 0);
+  }
+
+  function renderMoveSettings(){
+    const grid=$("moveSettingsGrid");
+    grid.innerHTML="";
+    MOVE_NAMES.forEach(face=>{
+      const weight=Math.max(0,Math.min(10,Number(settings.moveWeights[face])||0));
+      const row=document.createElement("div");
+      row.className="move-setting"+(weight===0?" off":"");
+      row.dataset.face=face;
+      row.innerHTML=`<div class="move-name">${face}</div><input type="range" min="0" max="10" step="1" value="${weight}" aria-label="Kans voor move ${face}"><div class="move-actions"><span class="move-weight">${weight}</span><button type="button" class="move-state ${weight>0?"primary":"ghost"}">${weight>0?"AAN":"UIT"}</button></div>`;
+      const range=row.querySelector("input");
+      const state=row.querySelector(".move-state");
+      const syncRow=()=>{
+        const value=Math.max(0,Math.min(10,parseInt(range.value||0,10)));
+        settings.moveWeights[face]=value;
+        if(value>0) settings.moveLastWeights[face]=value;
+        row.classList.toggle("off",value===0);
+        row.querySelector(".move-weight").textContent=value;
+        state.textContent=value>0?"AAN":"UIT";
+        state.classList.toggle("primary",value>0);
+        state.classList.toggle("ghost",value===0);
+        saveSettings();
+        syncUI();
+      };
+      range.oninput=(e)=>{e.stopPropagation();syncRow()};
+      state.onclick=(e)=>{e.stopPropagation();range.value=(Number(range.value)>0?0:(settings.moveLastWeights[face]||4));syncRow()};
+      row.onclick=(e)=>{
+        if(e.target===range || e.target===state || e.target.closest("button")) return;
+        range.value=(Number(range.value)>0?0:(settings.moveLastWeights[face]||4));
+        syncRow();
+      };
+      grid.appendChild(row);
+    });
+  }
+
+  function cancelCubeFinalizers(){
+    if(cubeResetTimer){clearTimeout(cubeResetTimer);cubeResetTimer=null;}
+    if(algoResetTimer){clearTimeout(algoResetTimer);algoResetTimer=null;}
+  }
+
+  function showScreen(s){
+    cancelCubeFinalizers();
+    document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+    s.classList.add("active");
+  }
+
+  function setTimer(ms){lastMs=ms;$("timer").textContent=(ms/1000).toFixed(2)+" s"}
+  function stopTimer(){if(timerFrame){cancelAnimationFrame(timerFrame);timerFrame=null}}
+  function tick(){
+    setTimer(performance.now()-timerStart);
+    timerFrame=requestAnimationFrame(tick);
+  }
+  function startTimer(){
+    stopTimer(); setTimer(0);
+    if(settings.timer){timerStart=performance.now();timerFrame=requestAnimationFrame(tick)}
+  }
+  function cancelDisplay(){if(displayTimer){clearTimeout(displayTimer);displayTimer=null}}
+
+  function showAll(){
+    $("moves").innerHTML="";
+    seq.forEach(m=>{const e=document.createElement("span");e.className="chip";e.textContent=m;$("moves").appendChild(e)})
+  }
+  function showOne(m){
+    $("moves").innerHTML="";
+    const e=document.createElement("div");e.className="move";e.textContent=m;$("moves").appendChild(e)
+  }
+  function hideSeq(){
+    $("moves").innerHTML="";
+    seq.forEach(()=>{const e=document.createElement("div");e.className="move hidden";e.textContent="?";$("moves").appendChild(e)})
+  }
+
+  function refreshCube(params, hostId="trainerCube"){
+    // Correct way to redisplay an AnimCubeJS instance without
+    // accumulating document event listeners.
+    if(hostId==="trainerCube" && cubeResetTimer){clearTimeout(cubeResetTimer);cubeResetTimer=null;}
+    if(hostId==="algoCube" && algoResetTimer){clearTimeout(algoResetTimer);algoResetTimer=null;}
+    if(acjs_removeListeners[hostId]) acjs_removeListeners[hostId]();
+    cubeReady=false;
+    const host=$(hostId);
+    host.innerHTML="";
+    AnimCube3(params);
+    cubeReady=true;
+  }
+
+  function solvedCubeParams(extra="", hostId="trainerCube"){
+    // AnimCubeJS colorscheme order is U,D,F,B,L,R.
+    // Fixed physical reference: yellow top, blue front, red right.
+    return "id="+hostId
+      +"&colorscheme=ywbgor"
+      +"&position=lluu"
+      +"&buttonbar=0"
+      +"&counter=0"
+      +"&edit=0"
+      +"&perspective=2"
+      +"&scale=1"
+      +extra;
+  }
+
+  function renderSolved(){
+    if(!settings.cube){cubeHost.style.display="none";return}
+    cubeHost.style.display="block";
+    refreshCube(solvedCubeParams());
+  }
+
+  function animSpeedFromMs(ms){
+    // AnimCubeJS docs: speed=10 is about 2/3 second per quarter turn.
+    // Higher numbers are slower. Convert our UI time approximately.
+    return Math.max(2, Math.min(30, Math.round(ms * 10 / 667)));
+  }
+
+  function renderRevealAndAnimate(){
+    if(!settings.cube){return}
+    cubeHost.style.display="block";
+
+    const move = animSequenceString();
+    const speed = animSpeedFromMs(settings.animationMs);
+
+    /*
+      AnimCubeJS's documented `demo` parameter automatically plays the
+      supplied move sequence after page load. That is what was missing
+      before: `move=` only loads the sequence; it does not press Play.
+
+      After the demo finishes, AnimCubeJS returns its demo instance to
+      its initial state. We therefore replace it with a second AnimCube
+      whose `initmove` is the exact same sequence. That makes the final
+      cube position permanent and mathematically identical to the
+      animated sequence.
+    */
+    refreshCube(
+      solvedCubeParams(
+        "&demo="+esc(move)+
+        "&speed="+speed+
+        "&doublespeed="+Math.round(speed*1.5)+
+        "&buttonbar=0"
+      )
+    );
+
+    const quarterMs = (speed / 10) * 667;
+    const estimatedMs = Math.max(250, Math.ceil(quarterMs * Math.max(1, seq.length) + 250));
+
+    cubeResetTimer=window.setTimeout(()=>{
+      cubeResetTimer=null;
+      if(!revealed || roundActive) return;
+      refreshCube(
+        solvedCubeParams(
+          "&initmove="+esc(move)+
+          "&buttonbar=0"
+        )
+      );
+    }, estimatedMs);
+  }
+
+  function tokenizeAlg(alg){
+    return alg.trim().split(/\s+/).filter(Boolean);
+  }
+
+  function inverseAlg(alg){
+    return tokenizeAlg(alg).reverse().map(move=>{
+      if(move.endsWith("2")) return move;
+      if(move.endsWith("'")) return move.slice(0,-1);
+      return move+"'";
+    }).join(" ");
+  }
+
+  function currentAlgorithm(){ return ALGORITHMS[algoMode][algoIndex]; }
+
+  function chooseRandomAlgorithm(){
+    const list=ALGORITHMS[algoMode];
+    if(list.length<=1) return 0;
+    let next;
+    do { next=Math.floor(Math.random()*list.length); } while(next===algoIndex);
+    return next;
+  }
+
+  function renderAlgoCube(){
+    const item=currentAlgorithm();
+    refreshCube(
+      solvedCubeParams("&initmove="+esc(inverseAlg(item.alg))+"&buttonbar=0", "algoCube"),
+      "algoCube"
+    );
+  }
+
+  function showAlgoHidden(){
+    $("algoMoves").innerHTML="";
+    const e=document.createElement("div");
+    e.className="move hidden";
+    e.textContent="? ? ? …";
+    $("algoMoves").appendChild(e);
+  }
+
+  function showAlgoAll(){
+    $("algoMoves").innerHTML="";
+    tokenizeAlg(currentAlgorithm().alg).forEach(m=>{
+      const e=document.createElement("span");
+      e.className="chip";
+      e.textContent=m;
+      $("algoMoves").appendChild(e);
+    });
+  }
+
+  function syncAlgoTabs(){
+    $("ollTab").classList.toggle("primary",algoMode==="OLL");
+    $("pllTab").classList.toggle("primary",algoMode==="PLL");
+    $("algoSideSet").textContent=algoMode;
+    $("algoSideCount").textContent=ALGORITHMS[algoMode].length;
+  }
+
+  function animSequenceStringFromAlg(alg){
+    return tokenizeAlg(alg).map(m=>m.endsWith("²")?m[0]+"2":m).join(" ");
+  }
+
+  function startAlgorithmRound(index=algoIndex){
+    algoIndex=((index%ALGORITHMS[algoMode].length)+ALGORITHMS[algoMode].length)%ALGORITHMS[algoMode].length;
+    algoRevealed=false;
+    const item=currentAlgorithm();
+    $("algoGroupLabel").textContent=`2-look ${algoMode} · ${item.caseType}`;
+    $("algoName").textContent=item.name;
+    $("algoCaseType").textContent=`Case image ${item.image} · ${item.caseType}`;
+    $("algoSideCase").textContent=item.name;
+    $("algoStatus").textContent="Bekijk de case en voer het algoritme uit.";
+    $("algoRevealBtn").disabled=false;
+    showAlgoHidden();
+    renderAlgoCube();
+  }
+
+  function revealAlgorithm(){
+    if(algoRevealed) return;
+    algoRevealed=true;
+    const item=currentAlgorithm();
+    showAlgoAll();
+    $("algoStatus").textContent="Algoritme onthuld — de animatie laat zien hoe de case naar opgelost gaat.";
+    $("algoRevealBtn").disabled=true;
+
+    const speed=animSpeedFromMs(settings.animationMs);
+    const quarterMs=(speed/10)*667;
+    const estimatedMs=Math.max(400,Math.ceil(quarterMs*Math.max(1,tokenizeAlg(item.alg).length)+350));
+    refreshCube(
+      solvedCubeParams(
+        "&initmove="+esc(inverseAlg(item.alg))+"&demo="+esc(animSequenceStringFromAlg(item.alg))+"&speed="+speed+"&doublespeed="+Math.round(speed*1.5)+"&buttonbar=0",
+        "algoCube"
+      ),
+      "algoCube"
+    );
+    algoResetTimer=window.setTimeout(()=>{
+      algoResetTimer=null;
+      if(!algoRevealed) return;
+      refreshCube(solvedCubeParams("", "algoCube"), "algoCube");
+    },estimatedMs);
+  }
+
+  function startRound(){
+    stopTimer();cancelDisplay();
+    if(!hasAnyMoveEnabled()){
+      roundActive=false;
+      showing=false;
+      revealed=false;
+      $("phase").textContent="Geen moves actief";
+      $("status").textContent="Zet in Instellingen → Moves minstens één move aan.";
+      $("moves").innerHTML="";
+      syncTouchAction();
+      return;
+    }
+    seq=makeSeq();roundActive=true;showing=true;revealed=false;setTimer(0);
+
+    $("phase").textContent=settings.displayMode==="step"?"Onthouden":"Onthoud alles";
+    $("status").textContent="Onthoud de reeks.";
+    syncTouchAction();
+
+    renderSolved();
+
+    if(settings.displayMode==="all"){
+      showAll();
+      displayTimer=setTimeout(()=>{
+        if(!roundActive)return;
+        showing=false;hideSeq();
+        $("phase").textContent="Voer de reeks uit";
+        $("status").textContent="Tik op de grote knop zodra je klaar bent.";
+        syncTouchAction();
+        startTimer();
+      },settings.displayMs);
+    }else{
+      showStep(0);
+    }
+  }
+
+  function showStep(i){
+    if(!roundActive)return;
+    if(i>=seq.length){
+      showing=false;hideSeq();
+      $("phase").textContent="Voer de reeks uit";
+      $("status").textContent="Tik op de grote knop zodra je klaar bent.";
+      syncTouchAction();
+      startTimer();return;
+    }
+    showOne(seq[i]);
+    displayTimer=setTimeout(()=>showStep(i+1),settings.displayMs);
+  }
+
+  function reveal(){
+    if(!roundActive || !seq.length)return;
+    stopTimer();cancelDisplay();
+    showing=false;roundActive=false;revealed=true;
+
+    syncTouchAction();
+    showAll();
+    $("phase").textContent="Reveal";
+    $("status").textContent=settings.timer?"Tijd: "+(lastMs/1000).toFixed(2)+" s":"Reeks onthuld";
+
+    renderRevealAndAnimate();
+  }
+
+  function syncTouchAction(){
+    if(roundActive){
+      if(showing){
+        touchAction.textContent="TIK HIER OM TE ONTHULLEN";
+        touchAction.setAttribute("aria-label","Tik hier om de reeks te onthullen");
+      }else{
+        touchAction.textContent="TIK HIER ALS JE KLAAR BENT";
+        touchAction.setAttribute("aria-label","Tik hier als je klaar bent");
+      }
+      touchAction.style.display="flex";
+      return;
+    }
+    if(revealed){
+      touchAction.textContent="TIK HIER VOOR VOLGENDE";
+      touchAction.setAttribute("aria-label","Tik hier voor de volgende ronde");
+      touchAction.style.display="flex";
+      return;
+    }
+    touchAction.textContent="TIK HIER OM TE STARTEN";
+    touchAction.setAttribute("aria-label","Tik hier om te starten");
+    touchAction.style.display="flex";
+  }
+
+  function syncUI(){
+    $("cubeToggle").textContent=settings.cube?"Aan":"Uit";
+    $("cubeToggle").classList.toggle("primary",settings.cube);
+    $("timerToggle").textContent=settings.timer?"Aan":"Uit";
+    $("timerToggle").classList.toggle("primary",settings.timer);
+    const enabledCount=faceWeights().filter(([,weight])=>weight>0).length;
+    $("movesSettingsBtn").textContent=`MEER INSTELLINGEN (${enabledCount}/6)`;
+
+    $("lengthMode").value=settings.lengthMode;
+    $("fixedRow").style.display=settings.lengthMode==="fixed"?"flex":"none";
+    $("rangeRow").style.display=settings.lengthMode==="range"?"flex":"none";
+    $("fixedLength").value=settings.fixedLength;
+    $("minLength").value=settings.minLength;
+    $("maxLength").value=settings.maxLength;
+
+    $("displayMode").value=settings.displayMode;
+    $("displayRange").value=settings.displayMs;
+    $("displayValue").textContent=settings.displayMs+" ms";
+
+    $("animationRange").value=settings.animationMs;
+    $("animationValue").textContent=settings.animationMs+" ms";
+
+    $("timer").style.visibility=settings.timer?"visible":"hidden";
+  }
+
+  $("playBtn").onclick=()=>{stopTimer();cancelDisplay();showScreen(game);startRound()};
+  $("algorithmBtn").onclick=()=>{stopTimer();cancelDisplay();showScreen($("algorithms"));syncAlgoTabs();startAlgorithmRound(0)};
+  $("menuBtn").onclick=()=>{stopTimer();cancelDisplay();showScreen(menu)};
+  $("algoMenuBtn").onclick=()=>{showScreen(menu)};
+  $("ollTab").onclick=()=>{algoMode="OLL";syncAlgoTabs();startAlgorithmRound(0)};
+  $("pllTab").onclick=()=>{algoMode="PLL";syncAlgoTabs();startAlgorithmRound(0)};
+  $("algoNextBtn").onclick=()=>{algoIndex=chooseRandomAlgorithm();startAlgorithmRound(algoIndex)};
+  $("algoRevealBtn").onclick=revealAlgorithm;
+  function handleTouchAction(){
+    if(roundActive){
+      if(showing) reveal();
+      else reveal();
+    }else if(revealed){
+      startRound();
+    }else{
+      startRound();
+    }
+  }
+  touchAction.onclick=handleTouchAction;
+  touchAction.onkeydown=e=>{if(e.key==="Enter" || e.key===" "){e.preventDefault();handleTouchAction()}};
+
+
+  $("settingsBtn").onclick=()=>{$("settingsOverlay").classList.add("show");renderMoveSettings()};
+  $("settingsBtn2").onclick=()=>{$("settingsOverlay").classList.add("show");renderMoveSettings()};
+  $("closeSettings").onclick=()=>$("settingsOverlay").classList.remove("show");
+  $("movesSettingsBtn").onclick=()=>{renderMoveSettings();$("moveSettingsOverlay").classList.add("show")};
+  $("closeMoveSettings").onclick=()=>$("moveSettingsOverlay").classList.remove("show");
+  $("doneMoveSettings").onclick=()=>{$("moveSettingsOverlay").classList.remove("show");syncUI()};
+  $("saveSettings").onclick=()=>{
+    settings.fixedLength=setNumber("fixedLength",$("fixedLength").value);
+    settings.minLength=Math.max(1,Math.min(50,parseInt($("minLength").value||1,10)));
+    settings.maxLength=Math.max(settings.minLength,Math.min(50,parseInt($("maxLength").value||settings.minLength,10)));
+    $("fixedLength").value=settings.fixedLength;
+    $("minLength").value=settings.minLength;
+    $("maxLength").value=settings.maxLength;
+    saveSettings();
+    $("settingsOverlay").classList.remove("show");
+    syncUI();
+  };
+
+  $("howBtn").onclick=()=>$("howOverlay").classList.add("show");
+  $("closeHow").onclick=()=>$("howOverlay").classList.remove("show");
+
+  $("cubeToggle").onclick=()=>{
+    settings.cube=!settings.cube;
+    saveSettings();
+    syncUI();
+    if(!settings.cube){
+      cancelCubeFinalizers();
+      cubeHost.style.display="none";
+    }else if(revealed){
+      renderRevealAndAnimate();
+    }else{
+      renderSolved();
+    }
+  };
+  $("timerToggle").onclick=()=>{
+    settings.timer=!settings.timer;
+    if(!settings.timer) stopTimer();
+    saveSettings();
+    syncUI();
+  };
+  $("lengthMode").onchange=e=>{settings.lengthMode=e.target.value;saveSettings();syncUI()};
+  function setNumber(id, value){
+    const el=$(id);
+    const n=Math.max(1,Math.min(50,parseInt(value||1,10)));
+    el.value=n;
+    return n;
+  }
+
+  function updateFixed(v){
+    settings.fixedLength=setNumber("fixedLength",v);
+    saveSettings();
+  }
+
+  function updateMin(v){
+    settings.minLength=setNumber("minLength",v);
+    if(settings.maxLength<settings.minLength) settings.maxLength=settings.minLength;
+    setNumber("maxLength",settings.maxLength);
+    saveSettings();
+  }
+
+  function updateMax(v){
+    settings.maxLength=setNumber("maxLength",v);
+    if(settings.maxLength<settings.minLength) settings.minLength=settings.maxLength;
+    setNumber("minLength",settings.minLength);
+    saveSettings();
+  }
+
+  $("fixedLength").oninput=e=>updateFixed(e.target.value);
+
+  $("minLength").oninput=e=>updateMin(e.target.value);
+  $("maxLength").oninput=e=>updateMax(e.target.value);
+
+  $("fixedMinus").onclick=()=>updateFixed(settings.fixedLength-1);
+  $("fixedPlus").onclick=()=>updateFixed(settings.fixedLength+1);
+  $("minMinus").onclick=()=>updateMin(settings.minLength-1);
+  $("minPlus").onclick=()=>updateMin(settings.minLength+1);
+  $("maxMinus").onclick=()=>updateMax(settings.maxLength-1);
+  $("maxPlus").onclick=()=>updateMax(settings.maxLength+1);
+  $("displayMode").onchange=e=>{settings.displayMode=e.target.value;saveSettings();syncUI()};
+  $("displayRange").oninput=e=>{settings.displayMs=parseInt(e.target.value,10);$("displayValue").textContent=settings.displayMs+" ms";saveSettings()};
+  $("animationRange").oninput=e=>{settings.animationMs=parseInt(e.target.value,10);$("animationValue").textContent=settings.animationMs+" ms";saveSettings()};
+
+  document.addEventListener("keydown",e=>{
+    if(e.code==="Space"){
+      e.preventDefault();
+      if(!game.classList.contains("active"))return;
+      if(roundActive && !showing){
+        reveal();
+      }else if(!roundActive && revealed){
+        startRound();
+      }else if(!roundActive && !revealed){
+        startRound();
+      }
+    }else if(e.key.toLowerCase()==="r" && game.classList.contains("active"))reveal();
+    else if(e.key.toLowerCase()==="n" && game.classList.contains("active") && !roundActive)startRound();
+    else if(e.key==="Escape"){$("settingsOverlay").classList.remove("show");$("moveSettingsOverlay").classList.remove("show");$("howOverlay").classList.remove("show")}
+  });
+
+  loadSavedSettings();
+  syncUI();
+  renderMoveSettings();
+  syncAlgoTabs();
+  syncTouchAction();
+  renderSolved();
+})();
+</script>
+</body>
+</html>
