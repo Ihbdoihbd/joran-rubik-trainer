@@ -60,24 +60,40 @@
   #algoMoves{min-height:88px}
   #algoMoves .chip{font-size:20px}
   #algoCube{width:min(620px,96%);height:360px}
+  /* Compact trainer layout: the main trainer no longer wastes space on a side panel or duplicate buttons. */
+  #game .play-layout{grid-template-columns:1fr;width:min(1040px,96vw);gap:0}
+  #game .game-card{min-height:0}
+  #game .move-area{justify-content:flex-start}
+  #game .cube-panel{min-height:280px}
+
   @media(max-width:900px){.play-layout{grid-template-columns:1fr}.game-card{min-height:auto}.side-card{order:-1}}
+  @media (min-width:701px) and (max-width:1100px){
+    #game .game-card{padding:18px;border-radius:20px}
+    #game .move-area{gap:10px}
+    #game .moves{min-height:88px}
+    #game .move{font-size:clamp(58px,9vw,94px)}
+    #game .cube-panel{min-height:250px}
+    #game #trainerCube{width:min(560px,92%);height:min(31svh,290px)}
+    #game .touch-action{width:min(620px,100%);min-height:66px;margin-top:10px}
+  }
+
   @media(max-width:700px){
     .screen{align-items:flex-start;padding:calc(10px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));overflow:auto}
     .card{padding:22px 16px;border-radius:18px;width:100%}
     .clean-menu{padding:34px 18px;width:min(520px,100%)}
     .play-layout{width:100%;gap:12px}
     .game-card,.side-card{border-radius:18px}
-    .game-card{padding:14px}
-    .side-card{padding:14px}
+    #game .game-card{padding:13px}
     .topbar{align-items:flex-start}
     .title{font-size:20px}
-    .move-area{gap:10px}
-    .moves{min-height:84px;gap:8px}
-    .move{font-size:clamp(50px,17vw,86px)}
-    .chip{font-size:18px;padding:7px 10px}
-    #trainerCube,#algoCube{width:100%;height:min(38svh,320px);min-height:220px}
-    .cube-panel{min-height:230px;width:100%}
+    #game .move-area{gap:8px}
+    #game .moves{min-height:72px;gap:7px}
+    #game .move{font-size:clamp(48px,16vw,82px)}
+    #game .chip{font-size:18px;padding:6px 9px}
+    #trainerCube,#algoCube{width:100%;height:min(34svh,290px);min-height:205px}
+    #game .cube-panel{min-height:215px;width:100%}
     .orientation{font-size:11px}
+    #game .controls{display:none}
     .controls{gap:8px}
     .controls button{flex:1 1 120px}
     .touch-action{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;width:100%;min-height:70px;font-size:17px}
@@ -272,33 +288,17 @@
         <div class="label" id="phase">Klaar</div>
         <div class="moves" id="moves"></div>
         <div class="timer" id="timer">0.00 s</div>
-        <div class="status" id="status">Tik op de grote knop of druk op START.</div>
+        <div class="status" id="status">Tik op de grote knop om te starten.</div>
 
         <div class="cube-panel">
           <div id="trainerCube"></div>
         </div>
         <div class="orientation">🟨 boven · 🟦 voor · 🟥 rechts</div>
 
-        <div class="controls">
-          <button class="primary" id="startBtn">START</button>
-          <button id="revealBtn" disabled>REVEAL</button>
-          <button id="nextBtn" disabled>NEXT</button>
-        </div>
         <div class="touch-action" id="touchAction" role="button" tabindex="0" aria-label="Trainer actie">TIK HIER OM TE STARTEN</div>
       </div>
     </div>
 
-    <aside class="side-card">
-      <h3>Deze ronde</h3>
-      <div class="side-stat"><span>Zetten</span><strong id="sideLen">—</strong></div>
-      <div class="side-stat"><span>Weergave</span><strong id="sideDisplay">—</strong></div>
-      <div class="side-stat"><span>Timer</span><strong id="sideTimer">Aan</strong></div>
-      <div class="side-stat"><span>Kubus</span><strong id="sideCube">Aan</strong></div>
-      <div style="margin-top:18px"><div class="mini">Laatste reeks</div><div id="sideSeq" style="margin-top:8px">—</div></div>
-      <div style="margin-top:20px"><div class="mini">Bediening</div>
-        <p style="margin:8px 0 0">Op telefoon en iPad gebruik je de grote knop op het scherm. <span class="kbd">R</span> en <span class="kbd">N</span> blijven ook werken op een toetsenbord.</p>
-      </div>
-    </aside>
   </div>
 </section>
 
@@ -417,14 +417,13 @@
 
     <div class="how-section">
       <h3>👆 2. De ronde starten</h3>
-      <p>Op telefoon en iPad gebruik je de grote knop onderaan. Je hoeft dus geen toetsenbord te gebruiken.</p>
-      <p>Afhankelijk van de fase doet de knop dit:</p>
+      <p>Op telefoon en iPad gebruik je alleen de grote knop onderaan. Die ene knop verandert automatisch mee met de fase van de ronde.</p>
       <div class="how-list">
         <div><b>START</b><span>Nieuwe reeks starten.</span></div>
-        <div><b>REVEAL</b><span>De oplossing/reeks onthullen en de kubus laten afspelen.</span></div>
-        <div><b>VOLGENDE</b><span>Nieuwe ronde starten.</span></div>
+        <div><b>ONTHULLEN</b><span>Na het onthouden onthult dezelfde knop de reeks en laat hij de kubus animeren.</span></div>
+        <div><b>VOLGENDE</b><span>Na de reveal begint dezelfde knop direct een nieuwe ronde.</span></div>
       </div>
-      <p class="small">Op desktop kun je daarnaast de sneltoetsen gebruiken wanneer die in beeld staan.</p>
+      <p class="small">Op een toetsenbord blijven <b>R</b> (onthullen) en <b>N</b> (volgende ronde) werken.</p>
     </div>
 
     <div class="how-section">
@@ -919,10 +918,6 @@
 
     $("phase").textContent=settings.displayMode==="step"?"Onthouden":"Onthoud alles";
     $("status").textContent="Onthoud de reeks.";
-    $("sideLen").textContent=seq.length;
-    $("sideDisplay").textContent=settings.displayMode==="step"?"Eén voor één":"Alles tegelijk";
-    $("sideSeq").textContent="Verborgen";
-    $("startBtn").disabled=true;$("revealBtn").disabled=false;$("nextBtn").disabled=true;
     syncTouchAction();
 
     renderSolved();
@@ -960,9 +955,7 @@
     stopTimer();cancelDisplay();
     showing=false;roundActive=false;revealed=true;
 
-    $("startBtn").disabled=false;$("revealBtn").disabled=true;$("nextBtn").disabled=false;
     syncTouchAction();
-    $("sideSeq").textContent=sequenceString();
     showAll();
     $("phase").textContent="Reveal";
     $("status").textContent=settings.timer?"Tijd: "+(lastMs/1000).toFixed(2)+" s":"Reeks onthuld";
@@ -1015,8 +1008,6 @@
     $("animationRange").value=settings.animationMs;
     $("animationValue").textContent=settings.animationMs+" ms";
 
-    $("sideTimer").textContent=settings.timer?"Aan":"Uit";
-    $("sideCube").textContent=settings.cube?"Aan":"Uit";
     $("timer").style.visibility=settings.timer?"visible":"hidden";
   }
 
@@ -1041,9 +1032,6 @@
   touchAction.onclick=handleTouchAction;
   touchAction.onkeydown=e=>{if(e.key==="Enter" || e.key===" "){e.preventDefault();handleTouchAction()}};
 
-  $("startBtn").onclick=startRound;
-  $("revealBtn").onclick=reveal;
-  $("nextBtn").onclick=startRound;
 
   $("settingsBtn").onclick=()=>{$("settingsOverlay").classList.add("show");renderMoveSettings()};
   $("settingsBtn2").onclick=()=>{$("settingsOverlay").classList.add("show");renderMoveSettings()};
